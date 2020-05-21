@@ -19,12 +19,11 @@ class App {
     this.server = express();
     this.middlewares();
     this.routes();
-    this.cors = cors()
     firebase.initializeApp(config)
   }
 
   middlewares() {
-    this.server.use(cors)
+    this.server.use(cors())
     this.server.use(express.json());
   }
 
