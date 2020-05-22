@@ -41,10 +41,9 @@ routes.post("/login", async (req, res) => {
       var errorMessage = error.message;
         return res.json({error: error})
     }).then(user => {
-      console.log(user)
       firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
-          return res.json({user: user, data: data})
+          return res.json({user: user})
         } else {
           return res.send()
         }
