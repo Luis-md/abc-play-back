@@ -72,10 +72,12 @@ routes.post("/login", async (req, res) => {
 /*GET USER*/
 
 routes.get('/user', auth, async (req, res) => {
-  const db = firebase.database()
+
   try {
-      const user = await db.ref('users/' + `${req.user.user_id}`)
-      res.json(user)
+      const user = firebase.database().ref(`users/${req.user.id}`)
+      user.on(`value`, (snap) => {
+        return res.json(snap.val())
+      })
   } catch (error) {
       console.error(error)
       res.status(500).send('server error')
