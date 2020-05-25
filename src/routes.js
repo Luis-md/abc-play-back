@@ -27,11 +27,29 @@ routes.post('/cadastro', (req, res) => {
             email: email,
             type: type
           });  
-          return res.status(200).json({user: newUser});
+
+          const payload = {
+            user: {
+                id: newUser.uid
+            }
+        }
+
+        jwt.sign(payload, config.get('jwtSecret'), {
+          expiresIn: 36000
+      }, (err, token) => {
+          if(err) throw err;
+          res.json({token})
+      })
+
+        //return res.status(200).json({user: newUser});
         })
       } else {
-        return res.send()
+        res.status(500).send('server error')
       }
+  })
+  .catch(function(error) {
+    console.error(error)
+    res.status(500).send('server error')
   })
 })
 
