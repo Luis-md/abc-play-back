@@ -1,5 +1,9 @@
 const { Router } = require('express')
 const firebase = require('firebase')
+const auth = require('../middleware/auth')
+const jwt = require('jsonwebtoken');
+const config = require('config')
+
 
 
 const routes = new Router();
@@ -10,7 +14,7 @@ routes.post('/cadastro', (req, res) => {
     
       return res.json({error: error})
   })
-  .then(user => {
+  .then(() => {
     let newUser = firebase.auth().currentUser;
       if(newUser !== null) { 
         newUser.updateProfile({
@@ -39,16 +43,42 @@ routes.post("/login", async (req, res) => {
       // Handle Errors here.
       var errorCode = error.code;
       var errorMessage = error.message;
-        return res.json({error: error})
+        return res.json({error: errorMessage})
     }).then(user => {
       firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
-          return res.json({user: user})
-        } else {
-          return res.send()
+
+          const payload = {
+            user: {
+                id: user.uid
+            }
         }
+
+        jwt.sign(payload, config.get('jwtSecret'), {
+          expiresIn: 36000
+      }, (err, token) => {
+          if(err) throw err;
+          res.json({token})
+      })
+
+        //return res.json({user: user})
+        } else {
+          res.status(500).send('server error')
+          }
       })
     });
 })
 
+/*GET USER*/
+
+routes.get('/user', auth, async (req, res) => {
+  const db = firebase.database()
+  try {
+      const user = await db.ref('users/' + `${req.user.user_id}`)
+      res.json(user)
+  } catch (error) {
+      console.error(error)
+      res.status(500).send('server error')
+  }
+})
 module.exports = routes
