@@ -61,7 +61,11 @@ routes.post("/login", async (req, res) => {
       // Handle Errors here.
       var errorCode = error.code;
       var errorMessage = error.message;
-        return res.json({error: errorMessage})
+      if(errorCode === 'auth/user-not-found') {
+        return res.json({error: 'Usuário não cadastrado na base de dados'})
+      } else {
+        return res.json({error: 'Email ou senha incorretos'})
+      }
     }).then(user => {
       firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
@@ -78,27 +82,36 @@ routes.post("/login", async (req, res) => {
           if(err) throw err;
           res.json({token})
       })
-
-        //return res.json({user: user})
-        } else {
-          res.status(500).send('server error')
-          }
+        }
       })
-    });
+    }).catch(err => {
+        res.status(500).send('server error')
+        
+    })
 })
 
 /*GET USER*/
 
-routes.get('/user', auth, async (req, res) => {
+routes.get('/user', auth, (req, res) => {
 
   try {
       const user = firebase.database().ref(`users/${req.user.id}`)
-      user.on(`value`, (snap) => {
-        return res.json(snap.val())
+      user.once(`value`, (snap) => {
+          res.json(snap.val())
       })
   } catch (error) {
-      console.error(error)
       res.status(500).send('server error')
+  }
+})
+
+routes.get('/assuntos', auth, (req, res) => {
+  try {
+    const assuntos = firebase.database().ref(`assuntos`)
+      assuntos.once(`value`, (snap) => {
+          res.json(snap.val())
+      })
+  } catch (err) {
+    res.status(500).send('server error')
   }
 })
 module.exports = routes
