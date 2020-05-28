@@ -104,9 +104,9 @@ routes.get('/user', auth, (req, res) => {
   }
 })
 
-routes.get('/assuntos', auth, (req, res) => {
+routes.get('/serie', auth, (req, res) => {
   try {
-    const assuntos = firebase.database().ref(`assuntos`)
+    const assuntos = firebase.database().ref(`serie`)
       assuntos.once(`value`, (snap) => {
           res.json(snap.val())
       })
