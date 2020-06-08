@@ -22,10 +22,12 @@ routes.post('/cadastro', (req, res) => {
         }).then(function() {
     
           const db = firebase.database()
+          
           db.ref('users/' + `${newUser.uid}`).set({
             username: name,
             email: email,
-            type: type
+            type: type,
+            id: newUser.uid,
           });  
 
           const payload = {
@@ -104,6 +106,17 @@ routes.get('/user', auth, (req, res) => {
   }
 })
 
+routes.get('/professores', auth, (req, res) => {
+  try {
+    const user = firebase.database().ref(`users/`)
+    user.once(`value`, (snap) => {       
+        res.json(Object.values(snap.val()).filter(user => user.type === "professor"))
+    })
+} catch (error) {
+    res.status(500).send('server error')
+}
+})
+
 routes.get('/serie', auth, (req, res) => {
   try {
     const assuntos = firebase.database().ref(`serie`)
@@ -114,4 +127,70 @@ routes.get('/serie', auth, (req, res) => {
     res.status(500).send('server error')
   }
 })
+
+routes.post('/desempenho', auth, async (req, res) => {
+
+  //TODO - Id de jogos para incrementar
+    try {
+        let today = new Date()
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+        today = dd + '/' + mm + '/' + yyyy;
+
+        const { title, acertos, erros } = req.body
+
+        const db = firebase.database()
+
+        const key = await db.ref('users/' + `${req.user.id}/desempenho`).push({
+             
+              title: title,
+              acertos: acertos,
+              erros: erros,
+              today: today    
+            
+          });  
+          res.json(title, acertos, erros, today)
+        // const atual = await db.desempenho.filter(assunto => assunto.title === req.body.assunto.title)
+
+    } catch (err) {
+      console.error(err.message)
+      res.status(500).send('server error')
+    }
+})
+
+routes.post('/addProfessor', auth, async (req, res) => {
+
+  //TODO - Id de jogos para incrementar
+    try {
+        const { username, email, _id, estudante, desempenho } = req.body
+
+        firebase.database().ref(`users/${req.user.id}/professores/${_id}`).set({
+          username,
+          email,
+          _id
+        })
+
+        if(desempenho) {
+          firebase.database().ref(`users/${_id}/alunos/${req.user.id}`).set({
+            estudante,
+            desempenho
+          })
+        } else {
+          firebase.database().ref(`users/${_id}/alunos/${req.user.id}`).set({
+            estudante
+          })
+        }
+
+        return res.json({
+            username,
+            email,
+            _id
+          })
+    } catch (err) {
+      console.error(err.message)
+      res.status(500).send('server error')
+    }
+})
+
 module.exports = routes
