@@ -149,7 +149,28 @@ routes.post('/desempenho', auth, async (req, res) => {
               erros: erros,
               today: today    
             
-          });  
+          });
+          //DAQUI PROFESSOR
+          try {
+  
+            const savedProfs = firebase.database().ref(`users/${req.user.id}/professores`)
+            savedProfs.once(`value`, (snap) => {       
+              const profs = Object.values(snap.val())
+              profs.forEach(prof => {
+                db.ref('users/' + `${prof._id}/alunos/${req.user.id}/desempenho`).push({
+             
+                  title: title,
+                  acertos: acertos,
+                  erros: erros,
+                  today: today    
+                
+              });
+              })
+            })  
+          } catch {
+            res.status(500).send('server error')
+          }
+          
           res.json(title, acertos, erros, today)
         // const atual = await db.desempenho.filter(assunto => assunto.title === req.body.assunto.title)
 
@@ -182,11 +203,38 @@ routes.post('/addProfessor', auth, async (req, res) => {
           })
         }
 
-        return res.json({
-            username,
-            email,
-            _id
+        try {
+          const user = firebase.database().ref(`users/${req.user.id}/professores`)
+          user.once(`value`, (snap) => {
+              res.json(snap.val())
           })
+      } catch (error) {
+          res.status(500).send('server error')
+      }
+
+    } catch (err) {
+      console.error(err.message)
+      res.status(500).send('server error')
+    }
+})
+
+routes.post('/delProf', auth, async (req, res) => {
+
+    try {
+        const { _id } = req.body
+
+        firebase.database().ref(`users/${req.user.id}/professores/${_id}`).remove()
+        firebase.database().ref(`users/${_id}/alunos/${req.user.id}`).remove()
+
+        try {
+          const user = firebase.database().ref(`users/${req.user.id}/professores`)
+          user.once(`value`, (snap) => {
+              res.json(snap.val())
+          })
+      } catch (error) {
+          res.status(500).send('server error')
+      }
+
     } catch (err) {
       console.error(err.message)
       res.status(500).send('server error')
