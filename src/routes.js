@@ -142,7 +142,7 @@ routes.post('/desempenho', auth, async (req, res) => {
 
         const db = firebase.database()
 
-        const key = await db.ref('users/' + `${req.user.id}/desempenho`).push({
+        await db.ref('users/' + `${req.user.id}/desempenho`).push({
              
               title: title,
               acertos: acertos,
@@ -154,8 +154,9 @@ routes.post('/desempenho', auth, async (req, res) => {
           try {
   
             const savedProfs = firebase.database().ref(`users/${req.user.id}/professores`)
-            savedProfs.once(`value`, (snap) => {       
-              const profs = Object.values(snap.val())
+            savedProfs.once(`value`, (snap) => {  
+              if(snap.exists()) {
+                const profs = Object.values(snap.val())
               profs.forEach(prof => {
                 db.ref('users/' + `${prof._id}/alunos/${req.user.id}/desempenho`).push({
              
@@ -166,9 +167,10 @@ routes.post('/desempenho', auth, async (req, res) => {
                 
               });
               })
+              }     
             })  
           } catch {
-            res.status(500).send('server error')
+            res.json(title, acertos, erros, today)
           }
           
           res.json(title, acertos, erros, today)
